@@ -4,7 +4,7 @@ import { bindTexture } from "./webGLHelpers/bindTexture";
 import { addTexture } from "./webGLHelpers/addTexture";
 import { createTexture } from "./webGLHelpers/createTexture";
 import vertexShader from "./shaders/default.vert?raw";
-import fogShader from "./shaders/_glitch.frag?raw";
+import fogShader from "./shaders/glitch.frag?raw";
 
 interface GlitchConfig {
   canvas: HTMLCanvasElement;
