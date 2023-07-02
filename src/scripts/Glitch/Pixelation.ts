@@ -4,17 +4,15 @@ import { bindTexture } from "./webGLHelpers/bindTexture";
 import { addTexture } from "./webGLHelpers/addTexture";
 import { createTexture } from "./webGLHelpers/createTexture";
 import vertexShader from "./shaders/default.vert?raw";
-import fogShader from "./shaders/glitch.frag?raw";
+import pixelationShader from "./shaders/pixelation.frag?raw";
 
 interface GlitchConfig {
   canvas: HTMLCanvasElement;
 }
 
 interface UniformParams {
-  time: WebGLUniformLocation | null;
   dimensions: WebGLUniformLocation | null;
-  mouse: WebGLUniformLocation | null;
-  strength: WebGLUniformLocation | null;
+  pixelSize: WebGLUniformLocation | null;
 }
 
 export class Glitch {
@@ -25,10 +23,8 @@ export class Glitch {
   glitchProgramm;
 
   uniformParams: UniformParams = {
-    time: null,
     dimensions: null,
-    mouse: null,
-    strength: null,
+    pixelSize: null,
   };
 
   originTexture;
@@ -38,15 +34,12 @@ export class Glitch {
     this.gl = this.canvas.getContext("webgl", { premultipliedAlpha: false });
 
     if (!this.gl) return;
-    this.glitchProgramm = createProgram(this.gl, vertexShader, fogShader);
+    this.glitchProgramm = createProgram(this.gl, vertexShader, pixelationShader);
     this.gl.useProgram(this.glitchProgramm);
 
-    // init uniform params
     if (!this.glitchProgramm) return;
     this.uniformParams.dimensions = this.gl.getUniformLocation(this.glitchProgramm, "dimensions");
-    this.uniformParams.time = this.gl.getUniformLocation(this.glitchProgramm, "time");
-    this.uniformParams.mouse = this.gl.getUniformLocation(this.glitchProgramm, "mouse");
-    this.uniformParams.strength = this.gl.getUniformLocation(this.glitchProgramm, "strength");
+    this.uniformParams.pixelSize = this.gl.getUniformLocation(this.glitchProgramm, "pixelSize");
 
     this.originTexture = createTexture(this.gl);
 
@@ -56,26 +49,25 @@ export class Glitch {
 
   initTexture(texture: TexImageSource) {
     if (!this.gl || !this.originTexture) return;
+
     bindTexture(this.gl, this.originTexture);
     addTexture(this.gl, texture);
   }
 
-  resize() {
+  resize(dimensions: [number, number]) {
     if (!this.gl) return;
 
-    this.gl.viewport(0, 0, this.canvas.offsetWidth * window.devicePixelRatio, this.canvas.offsetHeight * window.devicePixelRatio);
-
-    this.gl.uniform2fv(this.uniformParams.dimensions, [this.canvas.offsetWidth * window.devicePixelRatio, this.canvas.offsetHeight * window.devicePixelRatio]);
+    [this.canvas.width, this.canvas.height] = dimensions;
+    this.gl.viewport(0, 0, ...dimensions);
+    this.gl.uniform2fv(this.uniformParams.dimensions, dimensions);
 
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
   }
 
-  draw(tick: number, position: { x: number; y: number }, strength: number) {
+  draw(pixelSize: number) {
     if (!this.gl) return;
 
-    this.gl.uniform1f(this.uniformParams.time, tick);
-    this.gl.uniform2f(this.uniformParams.mouse, position.x, position.y);
-    this.gl.uniform1f(this.uniformParams.strength, strength);
+    this.gl.uniform1f(this.uniformParams.pixelSize, pixelSize);
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
   }
 }
